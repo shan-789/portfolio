@@ -1,32 +1,52 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>PDF Resume Viewer</title>
-  </head>
-  <body>
-    <h2>PDF.js Resume Viewer</h2>
-    <canvas id="resume-canvas"></canvas>
+<script type="module">
+  import * as pdfjsLib from './pdf.mjs';
 
-    <script type="module">
-      import * as pdfjsLib from './pdf.mjs';
+  const url = './shanmuga-priya-resume.pdf';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
 
-      const url = './shanmuga-priya-resume.pdf';
+  const loadingTask = pdfjsLib.getDocument(url);
+  loadingTask.promise.then(pdf => {
+    console.log(`PDF loaded with ${pdf.numPages} pages`);
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
+    const textPromises = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      textPromises.push(
+        pdf.getPage(i).then(page =>
+          page.getTextContent().then(content =>
+            content.items.map(item => item.str).join(' ')
+          )
+        )
+      );
+    }
 
-      const loadingTask = pdfjsLib.getDocument(url);
-      loadingTask.promise.then(pdf => {
-        pdf.getPage(1).then(page => {
-          const scale = 1.5;
-          const viewport = page.getViewport({ scale });
-          const canvas = document.getElementById('resume-canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          page.render({ canvasContext: context, viewport });
-        });
-      });
-    </script>
-  </body>
-</html>
+    Promise.all(textPromises).then(pages => {
+      const fullText = pages.join('\n\n');
+      console.log('Extracted Text:', fullText);
+
+      const name = fullText.match(/^[A-Za-z\s]+/g)?.[0]?.trim() || "";
+      const email = fullText.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)?.[0] || "";
+      const linkedin = fullText.match(/linkedin\.com\/[A-Za-z0-9\/\-\._]+/i)?.[0] || "";
+      const phone = fullText.match(/(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}/)?.[0] || "";
+      const education = fullText.match(/Education[\s\S]*?(?=Skills|Technical|Experience|$)/i)?.[0] || "";
+      const skills = fullText.match(/Skills[\s\S]*?(?=Experience|Projects|$)/i)?.[0] || "";
+      const experience = fullText.match(/Experience[\s\S]*?(?=Projects|Certifications|$)/i)?.[0] || "";
+
+      const jsonData = { name, email, linkedin, phone, education, skills, experience };
+
+      const heading = document.createElement('h3');
+      heading.textContent = 'Extracted Resume Data (JSON Format)';
+      document.body.appendChild(heading);
+
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(jsonData, null, 2);
+      pre.style.background = '#f4f4f4';
+      pre.style.padding = '15px';
+      pre.style.borderRadius = '10px';
+      pre.style.maxWidth = '800px';
+      pre.style.overflowX = 'auto';
+      document.body.appendChild(pre);
+
+      console.log('Structured JSON Output:', jsonData);
+    });
+  });
+</script>
