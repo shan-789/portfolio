@@ -1,52 +1,187 @@
-<script type="module">
-  import * as pdfjsLib from './pdf.mjs';
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Resume Viewer</title>
 
-  const url = './shanmuga-priya-resume.pdf';
-  pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
+    <!-- Minimal clean style -->
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        margin: 25px;
+        background-color: #f9fafb;
+        color: #333;
+      }
+      h2,
+      h3 {
+        color: #222;
+        margin-bottom: 10px;
+      }
+      label {
+        margin-right: 8px;
+        font-weight: 500;
+      }
+      select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-size: 14px;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 8px;
+        max-width: 800px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+      iframe {
+        width: 100%;
+        height: 900px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+      }
+      .section {
+        margin-bottom: 40px;
+      }
+    </style>
+  </head>
 
-  const loadingTask = pdfjsLib.getDocument(url);
-  loadingTask.promise.then(pdf => {
-    console.log(`PDF loaded with ${pdf.numPages} pages`);
+  <body>
+    
+    <div class="section">
+      <h2>Extracted Resume Data</h2>
 
-    const textPromises = [];
-    for (let i = 1; i <= pdf.numPages; i++) {
-      textPromises.push(
-        pdf.getPage(i).then(page =>
-          page.getTextContent().then(content =>
-            content.items.map(item => item.str).join(' ')
-          )
-        )
-      );
-    }
+      <script type="module">
+        import * as pdfjsLib from './pdf.mjs';
 
-    Promise.all(textPromises).then(pages => {
-      const fullText = pages.join('\n\n');
-      console.log('Extracted Text:', fullText);
+        const url = './shanmuga-priya-resume.pdf';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
 
-      const name = fullText.match(/^[A-Za-z\s]+/g)?.[0]?.trim() || "";
-      const email = fullText.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)?.[0] || "";
-      const linkedin = fullText.match(/linkedin\.com\/[A-Za-z0-9\/\-\._]+/i)?.[0] || "";
-      const phone = fullText.match(/(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}/)?.[0] || "";
-      const education = fullText.match(/Education[\s\S]*?(?=Skills|Technical|Experience|$)/i)?.[0] || "";
-      const skills = fullText.match(/Skills[\s\S]*?(?=Experience|Projects|$)/i)?.[0] || "";
-      const experience = fullText.match(/Experience[\s\S]*?(?=Projects|Certifications|$)/i)?.[0] || "";
+        const loadingTask = pdfjsLib.getDocument(url);
+        loadingTask.promise.then(pdf => {
+          console.log(`PDF loaded with ${pdf.numPages} pages`);
 
-      const jsonData = { name, email, linkedin, phone, education, skills, experience };
+          const textPromises = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            textPromises.push(
+              pdf.getPage(i).then(page =>
+                page.getTextContent().then(content =>
+                  content.items.map(item => item.str).join(' ')
+                )
+              )
+            );
+          }
 
-      const heading = document.createElement('h3');
-      heading.textContent = 'Extracted Resume Data (JSON Format)';
-      document.body.appendChild(heading);
+          Promise.all(textPromises).then(pages => {
+            const fullText = pages.join('\n\n');
+            console.log('Extracted Text:', fullText);
 
-      const pre = document.createElement('pre');
-      pre.textContent = JSON.stringify(jsonData, null, 2);
-      pre.style.background = '#f4f4f4';
-      pre.style.padding = '15px';
-      pre.style.borderRadius = '10px';
-      pre.style.maxWidth = '800px';
-      pre.style.overflowX = 'auto';
-      document.body.appendChild(pre);
+            const name = fullText.match(/^[A-Za-z\s]+/g)?.[0]?.trim() || '';
+            const email =
+              fullText.match(
+                /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/
+              )?.[0] || '';
+            const linkedin =
+              fullText.match(/linkedin\.com\/[A-Za-z0-9\/\-\._]+/i)?.[0] || '';
+            const phone =
+              fullText.match(
+                /(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}/
+              )?.[0] || '';
+            const education =
+              fullText.match(
+                /Education[\s\S]*?(?=Skills|Technical|Experience|$)/i
+              )?.[0] || '';
+            const skills =
+              fullText.match(
+                /Skills[\s\S]*?(?=Experience|Projects|$)/i
+              )?.[0] || '';
+            const experience =
+              fullText.match(
+                /Experience[\s\S]*?(?=Projects|Certifications|$)/i
+              )?.[0] || '';
 
-      console.log('Structured JSON Output:', jsonData);
-    });
-  });
-</script>
+            const jsonData = {
+              name,
+              email,
+              linkedin,
+              phone,
+              education,
+              skills,
+              experience,
+            };
+
+            const pre = document.createElement('pre');
+            pre.textContent = JSON.stringify(jsonData, null, 2);
+            document.body.appendChild(pre);
+
+            console.log('Structured JSON Output:', jsonData);
+          });
+        });
+      </script>
+    </div>
+
+    
+    <div class="section">
+      <h3>Preview JSON Résumé Themes</h3>
+      <label for="theme">Theme:</label>
+      <select id="theme">
+        <option value="elegant">Elegant</option>
+        <option value="flat">Flat</option>
+        <option value="even">Even</option>
+        <option value="professional">Professional</option>
+        <option value="macchiato">Macchiato</option>
+        <option value="kendall">Kendall</option>
+        <option value="minimalist-grid">Minimalist Grid</option>
+        <option value="executive-slate">Executive Slate</option>
+        <option value="creative-studio">Creative Studio</option>
+        <option value="data-driven">Data-Driven</option>
+        <option value="pumpkin">Pumpkin</option>
+        <option value="modern-classic">Modern Classic</option>
+      </select>
+
+      <div style="margin: 15px 0;"></div>
+
+      <iframe id="themePreview" title="JSON Resume Theme Preview"></iframe>
+
+      <script>
+        const localJSON = './simple.json';
+        const themeSelect = document.getElementById('theme');
+        const previewFrame = document.getElementById('themePreview');
+
+        async function loadTheme(themeName) {
+          try {
+          
+            const response = await fetch(localJSON);
+            const resumeData = await response.json();
+
+            
+            const blob = new Blob([JSON.stringify(resumeData)], {
+              type: 'application/json',
+            });
+            const jsonUrl = URL.createObjectURL(blob);
+
+         
+            previewFrame.src = `https://registry.jsonresume.org/thomasdavis?theme=${encodeURIComponent(
+              themeName
+            )}`;
+          } catch (error) {
+            console.error('Error loading simple.json:', error);
+            previewFrame.srcdoc = `
+              <div style="padding:20px;color:red;font-family:sans-serif;">
+                ⚠️ Failed to load <b>simple.json</b> or render the theme.<br>
+                Check that <b>simple.json</b> exists in the same folder.
+              </div>`;
+          }
+        }
+        loadTheme(themeSelect.value);
+        themeSelect.addEventListener('change', e =>
+          loadTheme(e.target.value)
+        );
+      </script>
+    </div>
+  </body>
+</html>
